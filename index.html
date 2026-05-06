@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>热量追踪</title>
+
+<!-- PWA Meta -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="热量追踪">
+<meta name="theme-color" content="#09090b">
+<meta name="description" content="科学减脂 · 健康增肌 · 热量追踪">
+
+<!-- PWA Icons -->
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo">
+      <span class="flame">🔥</span>热量追踪
+    </div>
+    <div class="tagline">CALORIE TRACKER · 科学饮食 · 数据驱动</div>
+  </header>
+
+  <nav class="nav" id="mainNav">
+    <button class="nav-btn active" data-tab="profile">👤 我的数据</button>
+    <button class="nav-btn" data-tab="plan">🎯 计划目标</button>
+    <button class="nav-btn" data-tab="food">🍽 饮食记录</button>
+    <button class="nav-btn" data-tab="progress">📊 进度追踪</button>
+  </nav>
+
+  <!-- TAB: 我的数据 -->
+  <div class="tab-content active" id="tab-profile">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-purple">📋</span>身体数据
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">年龄</label>
+          <input type="number" class="field-input" id="age" value="30" min="10" max="100" placeholder="输入年龄">
+          <span class="field-unit">岁</span>
+        </div>
+        <div class="field">
+          <label class="field-label">身高</label>
+          <input type="number" class="field-input" id="height" value="170" min="100" max="250" placeholder="输入身高">
+          <span class="field-unit">cm</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">性别</label>
+          <div class="toggle-group gender" id="genderToggle">
+            <button class="toggle-btn active male" data-val="male">♂ 男性</button>
+            <button class="toggle-btn female" data-val="female">♀ 女性</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">当前体重</label>
+          <input type="number" class="field-input" id="weight" value="70" min="30" max="200" step="0.1" placeholder="输入体重">
+          <span class="field-unit">kg</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="calculateBMR()" style="margin-top:8px;">
+        ⚡ 计算基础代谢
+      </button>
+
+      <div id="bmrResults" style="display:none;">
+        <div class="result-row">
+          <div class="result-bubble">
+            <div class="result-val blue" id="valBMI">-</div>
+            <div class="result-label">BMI 指数</div>
+          </div>
+          <div class="result-bubble">
+            <div class="result-val purple" id="valStdWeight">-</div>
+            <div class="result-label">标准体重 kg</div>
+          </div>
+          <div class="result-bubble highlight">
+            <div class="result-val green" id="valBMR">-</div>
+            <div class="result-label">基础代谢 大卡/天</div>
+          </div>
+          <div class="result-bubble">
+            <div class="result-val orange" id="valBodyType">-</div>
+            <div class="result-label">体型评估</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 计划目标 -->
+  <div class="tab-content" id="tab-plan">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-green">🎯</span>目标设定
+      </div>
+      <div class="field">
+        <label class="field-label">目标类型</label>
+        <div class="toggle-group goal" id="goalToggle">
+          <button class="toggle-btn active lose" data-val="lose">🔥 减重燃脂</button>
+          <button class="toggle-btn gain" data-val="gain">💪 增重增肌</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">目标体重</label>
+          <input type="number" class="field-input" id="targetWeight" value="65" min="30" max="200" step="0.1" placeholder="你想到达的体重">
+          <span class="field-unit">kg</span>
+        </div>
+        <div class="field">
+          <label class="field-label">目标天数</label>
+          <input type="number" class="field-input" id="targetDays" value="60" min="7" max="365" placeholder="计划多少天达成">
+          <span class="field-unit">天</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">偏好运动</label>
+          <select class="field-input field-select" id="exerciseType">
+            <option value="running">🏃 跑步 (8km/h)</option>
+            <option value="running_fast">🏃‍♂️ 跑步 (12km/h)</option>
+            <option value="swimming">🏊 游泳 (自由泳)</option>
+            <option value="walking">🚶 慢走 (5km/h)</option>
+            <option value="brisk_walk">🚶‍♂️ 快走 (7km/h)</option>
+            <option value="cycling">🚴 骑行 (16km/h)</option>
+            <option value="hiking">⛰ 爬山</option>
+            <option value="jumping_rope">🪢 跳绳</option>
+            <option value="hiit">💦 HIIT 高强度间歇</option>
+            <option value="strength">🏋️ 力量训练</option>
+            <option value="badminton">🏸 羽毛球</option>
+            <option value="yoga">🧘 瑜伽</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">每周运动天数</label>
+          <select class="field-input field-select" id="exerciseDays">
+            <option value="3">3 天 / 周</option>
+            <option value="4" selected>4 天 / 周</option>
+            <option value="5">5 天 / 周</option>
+            <option value="6">6 天 / 周</option>
+            <option value="7">每天运动</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="generatePlan()" style="margin-top:8px;">
+        📐 生成每日计划
+      </button>
+      <div id="planResults" style="display:none;">
+        <div class="plan-grid">
+          <div class="plan-card">
+            <div class="plan-accent eat"></div>
+            <span class="plan-icon">🍎</span>
+            <div class="plan-value" style="color:var(--green);" id="planCalTarget">-</div>
+            <div class="plan-label">每日建议摄入</div>
+          </div>
+          <div class="plan-card">
+            <div class="plan-accent burn"></div>
+            <span class="plan-icon">🔥</span>
+            <div class="plan-value" style="color:var(--orange);" id="planExBurn">-</div>
+            <div class="plan-label">运动消耗目标</div>
+          </div>
+          <div class="plan-card">
+            <div class="plan-accent time"></div>
+            <span class="plan-icon">⏱</span>
+            <div class="plan-value" style="color:var(--blue);" id="planExTime">-</div>
+            <div class="plan-label">建议运动时长</div>
+          </div>
+          <div class="plan-card">
+            <div class="plan-accent deficit"></div>
+            <span class="plan-icon">⚖</span>
+            <div class="plan-value" style="color:var(--red);" id="planDeficit">-</div>
+            <div class="plan-label" id="planDeficitLabel">每日热量缺口</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 饮食记录 -->
+  <div class="tab-content" id="tab-food">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-orange">🍽</span>饮食记录
+      </div>
+      <div class="field food-search-wrapper">
+        <label class="field-label">搜索食物</label>
+        <input type="text" class="field-input" id="foodSearch" placeholder="输入食物名称，例如：鸡胸肉、苹果、米饭…" oninput="searchFood()" onfocus="searchFood()" autocomplete="off">
+        <div class="food-dropdown" id="foodDropdown"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">份量</label>
+          <input type="number" class="field-input" id="foodGrams" value="100" min="1" max="5000" placeholder="食物重量">
+          <span class="field-unit">克</span>
+        </div>
+        <div class="field">
+          <label class="field-label">热量</label>
+          <input type="number" class="field-input" id="foodCalories" placeholder="自动计算或手动输入">
+          <span class="field-unit">大卡</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addFood()" style="margin-top:8px;">
+        ➕ 添加到今日记录
+      </button>
+
+      <div id="foodList" style="margin-top:16px;"></div>
+      <div id="foodTotal" style="display:none;">
+        <div class="total-bar">
+          <span>今日总摄入</span>
+          <span style="font-weight:700;color:var(--orange);" id="totalCalories">0 大卡</span>
+        </div>
+        <div class="total-bar">
+          <span>距离目标</span>
+          <span class="remain safe" id="remainingCalories">-</span>
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="addQuickWater()">💧 饮水 250ml</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearTodayFood()">🗑 清空记录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 进度追踪 -->
+  <div class="tab-content" id="tab-progress">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-blue">📊</span>今日进度
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span class="progress-title">热量摄入进度</span>
+          <span class="progress-stats">
+            <strong id="dailyPct">0%</strong>
+            <span style="color:var(--text-tertiary);margin:0 4px;">·</span>
+            <span id="dailyLabel">0 / 0 大卡</span>
+          </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill safe" id="dailyBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="milestones">
+        <div class="milestone-dot" data-threshold="25">
+          <div class="milestone-circle">🌱</div>
+          <div class="milestone-text">起步<br>25%</div>
+        </div>
+        <div class="milestone-dot" data-threshold="50">
+          <div class="milestone-circle">🔥</div>
+          <div class="milestone-text">过半<br>50%</div>
+        </div>
+        <div class="milestone-dot" data-threshold="75">
+          <div class="milestone-circle">⚡</div>
+          <div class="milestone-text">冲刺<br>75%</div>
+        </div>
+        <div class="milestone-dot" data-threshold="100">
+          <div class="milestone-circle">🏆</div>
+          <div class="milestone-text">达标<br>100%</div>
+        </div>
+      </div>
+      <div id="dailyEnc" class="enc-banner"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-purple">📅</span>本周概览
+      </div>
+      <div class="week-row" id="weekGrid"></div>
+      <div class="progress-container" style="margin-top:18px;">
+        <div class="progress-header">
+          <span class="progress-title">本周达标率</span>
+          <span class="progress-stats">
+            <strong id="weeklyPct">0%</strong>
+            <span style="color:var(--text-tertiary);margin:0 4px;">·</span>
+            <span id="weeklyLabel">0/7 天</span>
+          </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill safe" id="weeklyBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="weeklyEnc" class="enc-banner" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    食物数据：中国食物成分表（第6版）& USDA National Nutrient Database<br>
+    运动数据：Compendium of Physical Activities (MET标准)<br>
+    减重公式：1kg脂肪 ≈ 7,700 大卡热量缺口
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</body>
+</html>

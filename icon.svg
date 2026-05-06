@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7"/>
+      <stop offset="100%" style="stop-color:#09090b"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="40%" style="stop-color:#ff9f43"/>
+      <stop offset="100%" style="stop-color:#feca57"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <rect width="192" height="192" rx="36" fill="url(#bg)"/>
+  <!-- Flame icon -->
+  <text x="96" y="124" font-size="90" text-anchor="middle" fill="url(#flame)">🔥</text>
+</svg>
