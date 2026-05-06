@@ -2,7 +2,7 @@
 // 热量追踪 - Service Worker
 // 离线缓存 + PWA 支持
 // ============================================================
-const CACHE_NAME = 'calorie-tracker-v1';
+const CACHE_NAME = 'calorie-tracker-v3-20260506';
 const ASSETS = [
   './',
   './index.html',
