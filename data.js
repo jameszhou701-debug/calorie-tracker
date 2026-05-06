@@ -5,7 +5,7 @@
 // ============================================================
 
 const FOOD_DATABASE = [
-  // ===== 主食类 =====
+  // ===== 主食 =====
   { name: "白米饭", kcal: 116, category: "主食" },
   { name: "馒头", kcal: 223, category: "主食" },
   { name: "面条(煮)", kcal: 110, category: "主食" },
@@ -102,7 +102,7 @@ const FOOD_DATABASE = [
   { name: "美式咖啡", kcal: 2, category: "饮品" },
   { name: "拿铁(全脂)", kcal: 54, category: "饮品" },
 
-  // ===== 油脂/调味 =====
+  // ===== 油脂/坚果/调味 =====
   { name: "花生油", kcal: 899, category: "油脂" },
   { name: "橄榄油", kcal: 899, category: "油脂" },
   { name: "黄油", kcal: 717, category: "油脂" },
@@ -124,8 +124,7 @@ const FOOD_DATABASE = [
 // ============================================================
 // 运动热量消耗数据库
 // 数据来源：Compendium of Physical Activities (2011)
-// MET (Metabolic Equivalent of Task) 标准
-// 热量消耗 = MET × 体重(kg) × 时间(h)
+// MET = 代谢当量，热量消耗 = MET × 体重(kg) × 时间(h)
 // ============================================================
 
 const EXERCISE_DATABASE = {
@@ -152,74 +151,107 @@ const EXERCISE_DATABASE = {
 };
 
 // ============================================================
-// BMR 计算公式
-// Mifflin-St Jeor Equation (公认最准确)
-// 男: BMR = 10 × 体重(kg) + 6.25 × 身高(cm) - 5 × 年龄 - 5
-// 女: BMR = 10 × 体重(kg) + 6.25 × 身高(cm) - 5 × 年龄 - 161
+// 膳食指南 - 数据来源：中国居民膳食指南(2022)
+// https://www.cnsoc.org/
+// 每日推荐摄入量（克/天），基于2000大卡标准
 // ============================================================
+const DIET_GUIDELINES = {
+  lose: [
+    { name: "谷薯类", grams: 250, unit: "g", icon: "🌾", desc: "其中全谷物和杂豆50-150g" },
+    { name: "蔬菜", grams: 500, unit: "g", icon: "🥬", desc: "深色蔬菜应占一半" },
+    { name: "水果", grams: 250, unit: "g", icon: "🍎", desc: "优先选择低GI水果" },
+    { name: "畜禽肉", grams: 100, unit: "g", icon: "🥩", desc: "优先鱼禽，减少红肉" },
+    { name: "蛋类", grams: 50, unit: "g", icon: "🥚", desc: "约1个鸡蛋" },
+    { name: "奶类", grams: 300, unit: "ml", icon: "🥛", desc: "可选低脂/脱脂奶" },
+    { name: "大豆坚果", grams: 30, unit: "g", icon: "🥜", desc: "原味坚果一小把" },
+    { name: "烹调油", grams: 20, unit: "g", icon: "🫒", desc: "优选植物油" },
+  ],
+  gain: [
+    { name: "谷薯类", grams: 350, unit: "g", icon: "🌾", desc: "增加碳水摄入" },
+    { name: "蔬菜", grams: 400, unit: "g", icon: "🥬", desc: "保证维生素摄入" },
+    { name: "水果", grams: 300, unit: "g", icon: "🍎", desc: "多样化选择" },
+    { name: "畜禽肉", grams: 180, unit: "g", icon: "🥩", desc: "增加优质蛋白" },
+    { name: "水产类", grams: 75, unit: "g", icon: "🐟", desc: "三文鱼、虾仁等" },
+    { name: "蛋类", grams: 100, unit: "g", icon: "🥚", desc: "约2个鸡蛋" },
+    { name: "奶类", grams: 500, unit: "ml", icon: "🥛", desc: "全脂牛奶优先" },
+    { name: "大豆坚果", grams: 40, unit: "g", icon: "🥜", desc: "坚果和豆制品" },
+  ],
+};
 
+// ============================================================
+// 头像选择
+// ============================================================
+const AVATARS = [
+  { id: "pig", emoji: "🐷", name: "小猪" },
+  { id: "fish", emoji: "🐟", name: "小鱼" },
+  { id: "dog", emoji: "🐶", name: "小狗" },
+  { id: "horse", emoji: "🐴", name: "小马" },
+  { id: "cat", emoji: "🐱", name: "小猫" },
+  { id: "rabbit", emoji: "🐰", name: "小兔" },
+  { id: "bear", emoji: "🐻", name: "小熊" },
+  { id: "panda", emoji: "🐼", name: "熊猫" },
+  { id: "monkey", emoji: "🐵", name: "小猴" },
+  { id: "lion", emoji: "🦁", name: "小狮" },
+  { id: "tiger", emoji: "🐯", name: "小虎" },
+  { id: "cow", emoji: "🐮", name: "小牛" },
+];
+
+// ============================================================
+// BMR 计算公式 - Mifflin-St Jeor Equation
+// 男: BMR = 10×体重 + 6.25×身高 - 5×年龄 + 5
+// 女: BMR = 10×体重 + 6.25×身高 - 5×年龄 - 161
+// ============================================================
 function calcBMR(weight, height, age, gender) {
-  if (gender === 'male') {
-    return 10 * weight + 6.25 * height - 5 * age + 5;
-  } else {
-    return 10 * weight + 6.25 * height - 5 * age - 161;
-  }
+  if (gender === 'male') return 10 * weight + 6.25 * height - 5 * age + 5;
+  else return 10 * weight + 6.25 * height - 5 * age - 161;
 }
 
-// 标准体重 (Broca改良公式)
 function calcStandardWeight(height, gender) {
-  if (gender === 'male') {
-    return (height - 100) * 0.9;
-  } else {
-    return (height - 100) * 0.9 - 2.5;
-  }
+  if (gender === 'male') return (height - 100) * 0.9;
+  else return (height - 100) * 0.9 - 2.5;
 }
 
-// BMI
 function calcBMI(weight, height) {
   const h = height / 100;
   return weight / (h * h);
 }
 
 function getBMICategory(bmi) {
-  if (bmi < 18.5) return { cat: "偏瘦", color: "var(--orange)" };
-  if (bmi < 24.0) return { cat: "正常", color: "var(--green)" };
-  if (bmi < 28.0) return { cat: "偏胖", color: "var(--orange)" };
-  return { cat: "肥胖", color: "var(--primary)" };
+  if (bmi < 18.5) return { cat: "偏瘦", color: "#ff9f43" };
+  if (bmi < 24.0) return { cat: "正常", color: "#00ce7c" };
+  if (bmi < 28.0) return { cat: "偏胖", color: "#ff9f43" };
+  return { cat: "肥胖", color: "#ff6b6b" };
 }
 
-// 运动热量消耗 = MET × 体重(kg) × 时间(h)
 function calcExerciseBurn(met, weight, minutes) {
   return Math.round(met * weight * (minutes / 60));
 }
 
-// 根据目标计算每日热量缺口
-// 减1kg脂肪 ≈ 7700大卡热量缺口
 function calcDailyDeficit(currentWeight, targetWeight, days) {
-  const totalDiff = Math.abs(targetWeight - currentWeight);
-  const totalDeficit = totalDiff * 7700;
-  return Math.round(totalDeficit / days);
+  return Math.round(Math.abs(targetWeight - currentWeight) * 7700 / days);
 }
 
+// ============================================================
 // 鼓励语库
+// ============================================================
 const ENCOURAGEMENTS = {
   daily: {
-    0:  { text: "新的一天，从记录开始！每一次记录都是对自己的承诺 ✨", type: "warn" },
-    25: { text: "不错！已经完成了四分之一，你正在创造好习惯 🌱", type: "good" },
-    50: { text: "进度过半！坚持下去，今天的你就是明天的标杆 🔥", type: "fire" },
-    75: { text: "只剩最后一段路了，胜利就在前方！⚡", type: "fire" },
-    90: { text: "接近完成！你今天的表现令人骄傲 💪", type: "good" },
-    100:{ text: "今日目标达成！你是最棒的！给自己一个大大的赞 🏆🌟", type: "good" },
-    110:{ text: "今天略超标了，没关系，明天调整回来就好 😊", type: "warn" },
+    0:  { text: "新的一天，从记录开始！每一次记录都是对自己的承诺 ✨", type: "motivate" },
+    25: { text: "不错！完成了四分之一，好习惯正在形成 🌱", type: "good" },
+    50: { text: "进度过半！坚持下去，今天就是明天的标杆 🔥", type: "fire" },
+    75: { text: "只剩最后一段路，胜利就在前方！⚡", type: "fire" },
+    90: { text: "接近完成！今天的表现令人骄傲 💪", type: "good" },
+    100:{ text: "今日目标达成！给自己一个大大的赞 🏆🌟", type: "good" },
+    110:{ text: "今天略超标了，没关系，明天调整回来 😊", type: "warn" },
   },
   weekly: {
-    0:  { text: "新的一周，从现在开始，七天后看到一个更好的自己！", type: "warn" },
-    1:  { text: "第一天打卡！万事开头难，你已经迈出了最难的一步 🌱", type: "good" },
+    0:  { text: "新的一周，七天后看到一个更好的自己！", type: "motivate" },
+    1:  { text: "第一天打卡！万事开头难，最难的一步已经迈出 🌱", type: "good" },
     2:  { text: "坚持两天了！好习惯正在悄悄形成 🌿", type: "good" },
-    3:  { text: "三天连续！研究表明21天养成习惯，你已经走了1/7 🔥", type: "fire" },
-    4:  { text: "四天！你正在超越大多数人的意志力 ⚡", type: "fire" },
-    5:  { text: "五天不中断！这已经是生活中的一部分了 💪", type: "good" },
-    6:  { text: "六天！再坚持一天就完成一周目标了！🏆", type: "fire" },
-    7:  { text: "🎉 恭喜完成一周目标！你是自律的化身！下周继续保持！🌟", type: "good" },
+    3:  { text: "三天连续！21天养成习惯，你走了1/7 🔥", type: "fire" },
+    4:  { text: "四天！正在超越大多数人的意志力 ⚡", type: "fire" },
+    5:  { text: "五天不中断！自律已成生活的一部分 💪", type: "good" },
+    6:  { text: "六天！再坚持一天就完成一周目标！🏆", type: "fire" },
+    7:  { text: "🎉 完成一周目标！自律的化身！下周继续！🌟", type: "good" },
   },
 };
