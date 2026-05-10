@@ -761,8 +761,57 @@ async function callGeminiVision(base64Image) {
   // Detect API key type - OpenAI keys start with sk-
   if (apiKey.startsWith('sk-')) {
     await callOpenAIVision(apiKey, base64Image, prompt);
+  } else if (apiKey.length > 30) {
+    // Long key = Together AI or Gemini
+    await callTogetherAIVision(apiKey, base64Image, prompt);
   } else {
     await callGeminiAPI(apiKey, base64Image, prompt);
+  }
+}
+
+async function callTogetherAIVision(apiKey, base64Image, prompt) {
+  try {
+    $('cameraStatus').innerHTML = '<span class="spinner"></span>Together AI 识别中…';
+    
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + base64Image } }
+          ]
+        }],
+        max_tokens: 500,
+        temperature: 0.2
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      if (response.status === 401) throw new Error('Together AI Key 无效');
+      if (response.status === 429) throw new Error('请求太频繁，请稍后再试');
+      if (response.status === 402) throw new Error('额度不足，请检查余额');
+      throw new Error('API 错误 (' + response.status + ')');
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    parseAIResult(text);
+  } catch (error) {
+    // Fall back to Gemini if Together fails
+    if (error.message.includes('Key') || error.message.includes('余额')) {
+      showAIError(error.message);
+    } else {
+      // Try Gemini as fallback
+      await callGeminiAPI(apiKey, base64Image, prompt);
+    }
   }
 }
 
