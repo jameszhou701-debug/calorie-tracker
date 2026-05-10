@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="app">
@@ -24,7 +24,7 @@
       <div class="logo">
         <span class="flame">🔥</span>热量追踪
       </div>
-      <div style="width:44px;"></div>
+      <button class="settings-btn" onclick="openSettings()" title="设置">⚙</button>
     </div>
     <div class="tagline">CALORIE TRACKER · 科学饮食 · 数据驱动</div>
   </header>
@@ -167,6 +167,19 @@
     <div class="sub-tab active" id="sub-eat">
       <div class="card">
         <div class="card-title"><span class="icon icon-orange">🍽</span>饮食记录</div>
+        
+        <!-- 拍照识别食物 -->
+        <div class="camera-row">
+          <button class="btn btn-camera" onclick="triggerCamera()">
+            <span class="camera-icon">📸</span>拍照识别食物
+          </button>
+          <span class="camera-hint">AI 自动识别食物种类和重量</span>
+        </div>
+        <div id="cameraStatus" class="camera-status" style="display:none;"></div>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCameraImage(event)" style="display:none;">
+
+        <div class="divider"><span>或手动输入</span></div>
+
         <div class="field food-search-wrapper">
           <label class="field-label">搜索食物</label>
           <input type="text" class="field-input" id="foodSearch" placeholder="输入食物名称，例如：鸡胸肉、米饭…" oninput="searchFood()" onfocus="searchFood()" autocomplete="off">
@@ -300,15 +313,48 @@
     </div>
   </div>
 
-  <div class="footer">
+  <!-- ===== AI 识别结果确认弹窗 ===== -->
+<div class="modal-overlay" id="aiModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">🤖 AI 识别结果</div>
+    <div class="modal-body" id="aiResultBody"></div>
+    <div class="modal-food-list" id="aiFoodList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cancelAIResult()">取消</button>
+      <button class="btn btn-primary" onclick="confirmAIResult()">✓ 确认录入</button>
+    </div>
+  </div>
+</div>
+
+<!-- API Key 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">⚙ 设置</div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Gemini API Key</label>
+        <input type="password" class="field-input" id="apiKeyInput" placeholder="粘贴你的 Gemini API Key">
+        <div style="font-size:0.7rem;color:var(--text-tertiary);margin-top:4px;">
+          免费获取：<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com/apikey</a>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">取消</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
     食物数据：中国食物成分表（第6版）& USDA<br>
     膳食指南：中国居民膳食指南 (2022)<br>
     运动数据：Compendium of Physical Activities
   </div>
 </div>
 
-<script src="data.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="data.js?v=4"></script>
+<script src="app.js?v=4"></script>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>

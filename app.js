@@ -162,6 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   init();
+
+  // Close modals on overlay click
+  $('aiModal')?.addEventListener('click', (e) => {
+    if (e.target === $('aiModal')) cancelAIResult();
+  });
+  $('settingsModal')?.addEventListener('click', (e) => {
+    if (e.target === $('settingsModal')) closeSettings();
+  });
 });
 
 // =====================================================
@@ -686,4 +694,224 @@ function init() {
   renderExerciseList();
   updateExEstimate();
   renderProgress();
+}
+
+// =====================================================
+// AI CAMERA - Gemini Vision 食物识别
+// =====================================================
+
+// Food name to emoji mapping for AI results
+const FOOD_EMOJI_MAP = {
+  '米饭':'🍚','馒头':'🥟','面条':'🍜','面包':'🍞','燕麦':'🥣','玉米':'🌽','红薯':'🍠','土豆':'🥔',
+  '鸡肉':'🍗','猪肉':'🥩','牛肉':'🥩','羊肉':'🥩','鱼肉':'🐟','虾':'🦐','蟹':'🦀','蛋':'🥚',
+  '西兰花':'🥦','菠菜':'🥬','番茄':'🍅','黄瓜':'🥒','胡萝卜':'🥕','白菜':'🥬','芹菜':'🥬','生菜':'🥬',
+  '苹果':'🍎','香蕉':'🍌','橙子':'🍊','葡萄':'🍇','西瓜':'🍉','草莓':'🍓','芒果':'🥭','蓝莓':'🫐','猕猴桃':'🥝',
+  '牛奶':'🥛','酸奶':'🥛','奶酪':'🧀','豆浆':'🥛',
+  '蛋糕':'🍰','饼干':'🍪','巧克力':'🍫','冰淇淋':'🍦',
+  '豆腐':'🧈','汤':'🥣','沙拉':'🥗','水饺':'🥟','包子':'🥟',
+};
+
+function getFoodEmoji(name) {
+  for (const [k, v] of Object.entries(FOOD_EMOJI_MAP)) {
+    if (name.includes(k)) return v;
+  }
+  return '🍽';
+}
+
+let pendingAIResults = [];
+
+function triggerCamera() {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    openSettings();
+    return;
+  }
+  $('cameraInput').click();
+}
+
+function handleCameraImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  $('cameraStatus').style.display = 'block';
+  $('cameraStatus').innerHTML = '<span class="spinner"></span>AI 正在识别食物…';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result.split(',')[1];
+    callGeminiVision(base64);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function callGeminiVision(base64Image) {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    $('cameraStatus').style.display = 'none';
+    openSettings();
+    return;
+  }
+
+  const prompt = '你是一个营养师。请分析这张食物照片。\n\n请严格按照以下JSON格式返回，不要包含任何其他文字、markdown或代码块标记：\n\n{\n  "foods": [\n    {\n      "name": "食物中文名称",\n      "grams": 估算克数(整数),\n      "kcal": 估算热量(整数大卡)\n    }\n  ],\n  "totalKcal": 总热量(整数),\n  "note": "简短说明(10字以内)"\n}\n\n要求：\n- name 用中文\n- grams 估算食物的大概克数\n- kcal 基于常见食物的标准热量\n- 如果无法确定，给出合理估算\n- 返回纯JSON，不要有markdown代码块';
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
+            ]
+          }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      if (response.status === 403) {
+        throw new Error('API Key 无效或未启用，请检查设置');
+      }
+      throw new Error(`API 错误 (${response.status})`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Parse JSON from response (strip possible markdown)
+    let jsonStr = text.trim();
+    jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    
+    const result = JSON.parse(jsonStr);
+    
+    if (!result.foods || result.foods.length === 0) {
+      throw new Error('未能识别出食物，请尝试更清晰的照片');
+    }
+
+    pendingAIResults = result.foods.map(f => ({
+      name: f.name,
+      grams: f.grams || 100,
+      kcal: f.kcal || 0,
+    }));
+
+    showAIResultModal(pendingAIResults, result.note || '');
+    $('cameraStatus').style.display = 'none';
+
+  } catch (error) {
+    $('cameraStatus').style.display = 'block';
+    $('cameraStatus').style.color = 'var(--red)';
+    $('cameraStatus').innerHTML = `❌ ${error.message}`;
+    setTimeout(() => {
+      $('cameraStatus').style.display = 'none';
+      $('cameraStatus').style.color = 'var(--accent)';
+    }, 4000);
+  }
+}
+
+function showAIResultModal(foods, note) {
+  $('aiResultBody').innerHTML = note 
+    ? `<div style="font-size:0.82rem;color:var(--text-secondary);text-align:center;margin-bottom:4px;">${note}</div>`
+    : '';
+
+  $('aiFoodList').innerHTML = foods.map((f, i) => `
+    <div class="ai-food-item">
+      <span class="ai-food-emoji">${getFoodEmoji(f.name)}</span>
+      <div class="ai-food-info">
+        <div class="ai-food-name">${f.name}</div>
+        <div class="ai-food-detail">约 ${f.grams} 克 · ${f.kcal} 大卡</div>
+      </div>
+      <div class="ai-food-edit">
+        <input type="number" value="${f.grams}" min="1" max="5000" 
+               onchange="updateAIResultGram(${i}, this.value)" 
+               onclick="event.stopPropagation()">
+        <span style="font-size:0.72rem;color:var(--text-tertiary);">g</span>
+      </div>
+      <span class="ai-food-kcal">${f.kcal} kcal</span>
+    </div>
+  `).join('');
+
+  $('aiModal').style.display = 'flex';
+}
+
+function updateAIResultGram(index, value) {
+  const grams = parseInt(value) || 0;
+  if (grams <= 0) return;
+  // Recalculate kcal proportionally
+  const originalGrams = pendingAIResults[index].grams;
+  const originalKcal = pendingAIResults[index].kcal;
+  const ratio = grams / originalGrams;
+  if (originalGrams) {
+    pendingAIResults[index].grams = grams;
+    pendingAIResults[index].kcal = Math.round(originalKcal * ratio);
+  }
+  // Refresh only the kcal display
+  const kcalEls = document.querySelectorAll('.ai-food-kcal');
+  if (kcalEls[index]) {
+    kcalEls[index].textContent = pendingAIResults[index].kcal + ' kcal';
+  }
+  const detailEls = document.querySelectorAll('.ai-food-detail');
+  if (detailEls[index]) {
+    detailEls[index].textContent = `约 ${grams} 克 · ${pendingAIResults[index].kcal} 大卡`;
+  }
+}
+
+function cancelAIResult() {
+  pendingAIResults = [];
+  $('aiModal').style.display = 'none';
+}
+
+function confirmAIResult() {
+  const date = $('foodDate').value || getToday();
+  const meal = $('foodMeal').value || 'snack';
+  
+  if (!state.foodHistory[date]) state.foodHistory[date] = [];
+  
+  const now = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  
+  pendingAIResults.forEach(f => {
+    state.foodHistory[date].push({
+      name: f.name,
+      grams: f.grams,
+      kcal: f.kcal,
+      time: now,
+      meal: meal
+    });
+  });
+
+  pendingAIResults = [];
+  $('aiModal').style.display = 'none';
+  
+  renderFoodList();
+  updateFoodTotal();
+  saveState();
+  renderProgress();
+}
+
+// =====================================================
+// SETTINGS
+// =====================================================
+function openSettings() {
+  const savedKey = localStorage.getItem('gemini_api_key') || '';
+  $('apiKeyInput').value = savedKey;
+  $('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+  $('settingsModal').style.display = 'none';
+}
+
+function saveApiKey() {
+  const key = $('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('gemini_api_key', key);
+  } else {
+    localStorage.removeItem('gemini_api_key');
+  }
+  $('settingsModal').style.display = 'none';
 }
