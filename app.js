@@ -755,62 +755,73 @@ async function callGeminiVision(base64Image) {
 
   const prompt = '你是一个营养师。请分析这张食物照片。\n\n请严格按照以下JSON格式返回，不要包含任何其他文字、markdown或代码块标记：\n\n{\n  "foods": [\n    {\n      "name": "食物中文名称",\n      "grams": 估算克数(整数),\n      "kcal": 估算热量(整数大卡)\n    }\n  ],\n  "totalKcal": 总热量(整数),\n  "note": "简短说明(10字以内)"\n}\n\n要求：\n- name 用中文\n- grams 估算食物的大概克数\n- kcal 基于常见食物的标准热量\n- 如果无法确定，给出合理估算\n- 返回纯JSON，不要有markdown代码块';
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
-            ]
-          }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
-        })
+  // Retry logic with exponential backoff
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=' + apiKey,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
+              ]
+            }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
+          })
+        }
+      );
+
+      if (response.status === 429) {
+        const waitMs = (attempt + 1) * 3000;
+        $('cameraStatus').innerHTML = '<span class="spinner"></span>请求太频繁，等待 ' + (waitMs/1000) + ' 秒后重试…';
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
       }
-    );
 
-    if (!response.ok) {
-      const err = await response.text();
-      if (response.status === 403) {
-        throw new Error('API Key 无效或未启用，请检查设置');
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('API Key 无效或未启用，请检查设置');
+        }
+        throw new Error('API 错误 (' + response.status + ')');
       }
-      throw new Error(`API 错误 (${response.status})`);
-    }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    // Parse JSON from response (strip possible markdown)
-    let jsonStr = text.trim();
-    jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    
-    const result = JSON.parse(jsonStr);
-    
-    if (!result.foods || result.foods.length === 0) {
-      throw new Error('未能识别出食物，请尝试更清晰的照片');
-    }
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      let jsonStr = text.trim();
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      
+      const result = JSON.parse(jsonStr);
+      
+      if (!result.foods || result.foods.length === 0) {
+        throw new Error('未能识别出食物，请尝试更清晰的照片');
+      }
 
-    pendingAIResults = result.foods.map(f => ({
-      name: f.name,
-      grams: f.grams || 100,
-      kcal: f.kcal || 0,
-    }));
+      pendingAIResults = result.foods.map(f => ({
+        name: f.name,
+        grams: f.grams || 100,
+        kcal: f.kcal || 0,
+      }));
 
-    showAIResultModal(pendingAIResults, result.note || '');
-    $('cameraStatus').style.display = 'none';
-
-  } catch (error) {
-    $('cameraStatus').style.display = 'block';
-    $('cameraStatus').style.color = 'var(--red)';
-    $('cameraStatus').innerHTML = `❌ ${error.message}`;
-    setTimeout(() => {
+      showAIResultModal(pendingAIResults, result.note || '');
       $('cameraStatus').style.display = 'none';
-      $('cameraStatus').style.color = 'var(--accent)';
-    }, 4000);
+      return;
+
+    } catch (error) {
+      if (attempt === 2) {
+        $('cameraStatus').style.display = 'block';
+        $('cameraStatus').style.color = 'var(--red)';
+        $('cameraStatus').innerHTML = '❌ ' + error.message;
+        setTimeout(() => {
+          $('cameraStatus').style.display = 'none';
+          $('cameraStatus').style.color = 'var(--accent)';
+        }, 4000);
+      }
+    }
   }
 }
 
