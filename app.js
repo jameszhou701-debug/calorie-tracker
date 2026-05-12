@@ -202,6 +202,62 @@ function updateAvatarDisplay() {
   $('avatarDisplay').textContent = a ? a.emoji : '🐷';
 }
 
+// --- Body Type ---
+function renderBodyTypes() {
+  const grid = document.getElementById('bodyTypeGrid');
+  if (!grid) return;
+  grid.innerHTML = BODY_TYPES.map(b =>
+    '<div class="body-type-option' + (b.id === state.bodyType ? ' selected' : '') + '" onclick="selectBodyType(\'' + b.id + '\')">' +
+    '<span class="bt-emoji">' + b.emoji + '</span>' +
+    '<span class="bt-name">' + b.name + '</span>' +
+    '<span class="bt-desc">' + b.desc + '</span></div>'
+  ).join('');
+}
+
+function selectBodyType(id) {
+  state.bodyType = id;
+  renderBodyTypes();
+  saveState();
+  if (state.bmr) calculateBMR();
+}
+
+function renderBodyGoals() {
+  const grid = document.getElementById('bodyGoalGrid');
+  if (!grid) return;
+  grid.innerHTML = BODY_GOALS.map(g =>
+    '<div class="body-goal-option' + (g.id === state.bodyGoal ? ' selected' : '') + '" onclick="selectBodyGoal(\'' + g.id + '\')">' +
+    '<span class="bg-emoji">' + g.emoji + '</span>' +
+    '<span class="bg-name">' + g.name + '</span>' +
+    '<span class="bg-desc">' + g.desc + '</span></div>'
+  ).join('');
+}
+
+function selectBodyGoal(id) {
+  state.bodyGoal = id;
+  renderBodyGoals();
+  saveState();
+  if (state.dailyCalorieTarget) generatePlan();
+}
+
+function renderExerciseGuide() {
+  const guide = EXERCISE_GUIDES[state.bodyGoal];
+  const card = document.getElementById('exerciseGuideCard');
+  if (!card || !guide) return;
+  const dayNames = ['周一','周二','周三','周四','周五','周六','周日'];
+  document.getElementById('exerciseGuide').innerHTML =
+    '<div class="ex-guide-title">' + guide.title + '</div>' +
+    '<div class="ex-guide-week">' +
+    guide.weekly.map(function(w, i) {
+      return '<div class="ex-guide-day">' +
+        '<span class="ex-day-icon">' + w.icon + '</span>' +
+        '<span class="ex-day-name">' + dayNames[i] + '</span>' +
+        '<span class="ex-day-detail">' + w.detail + '</span></div>';
+    }).join('') +
+    '</div>' +
+    '<div class="ex-guide-tips">' + guide.tips + '</div>';
+  card.style.display = 'block';
+}
+
 // =====================================================
 // BMR
 // =====================================================
@@ -717,8 +773,10 @@ function init() {
   document.querySelectorAll('#genderToggle .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.gender));
   document.querySelectorAll('#goalToggle .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.goalType));
 
-  // Avatars
+  // Avatars & Body Types
   renderAvatars();
+  renderBodyTypes();
+  renderBodyGoals();
 
   // Restore BMR display
   if (state.bmr) {

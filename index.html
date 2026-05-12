@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="app">
@@ -45,6 +45,12 @@
     <div class="card">
       <div class="card-title"><span class="icon icon-purple">🖼</span>选择你的头像</div>
       <div class="avatar-grid" id="avatarGrid"></div>
+    </div>
+
+    <!-- 体型选择 -->
+    <div class="card">
+      <div class="card-title"><span class="icon icon-purple">🧬</span>我的体型</div>
+      <div class="body-type-grid" id="bodyTypeGrid"></div>
     </div>
 
     <div class="card">
@@ -417,8 +423,8 @@
   </div>
 </div>
 
-<script src="data.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="data.js?v=8"></script>
+<script src="app.js?v=8"></script>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
