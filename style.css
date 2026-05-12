@@ -361,6 +361,39 @@ body::before {
 .cal-detail-row:last-child { border: none; }
 .cal-detail-val { font-weight: 700; }
 
+/* ===== ENERGY BALANCE (Progress Tab) ===== */
+.energy-summary {
+  display: flex; align-items: center; gap: 4px;
+  flex-wrap: wrap; justify-content: center;
+  padding: 8px 0 16px;
+}
+.energy-item {
+  text-align: center; padding: 10px 8px;
+  background: var(--surface); border-radius: var(--radius-xs);
+  min-width: 56px; border: 1px solid var(--border);
+}
+.energy-item .energy-icon { font-size: 1.3rem; }
+.energy-item .energy-val {
+  font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;
+}
+.energy-item .energy-label { font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; }
+.energy-in .energy-val { color: var(--green); }
+.energy-out .energy-val { color: var(--orange); }
+.energy-bmr .energy-val { color: var(--blue); }
+.energy-net .energy-val { color: var(--text); }
+.energy-net.positive .energy-val { color: var(--red); }
+.energy-net.negative .energy-val { color: var(--green); }
+.energy-arrow { font-size: 1rem; color: var(--text-tertiary); font-weight: 300; }
+.energy-bar-row { margin-top: 8px; }
+.energy-bar-label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+.energy-diff {
+  margin-top: 10px; padding: 10px 14px; text-align: center;
+  background: var(--surface); border-radius: var(--radius-xs);
+  font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border);
+}
+.energy-diff.surplus { color: var(--red); border-color: var(--red-bg); }
+.energy-diff.deficit { color: var(--green); border-color: var(--green-bg); }
+
 /* ===== FOOTER ===== */
 .footer { text-align: center; padding: 24px 0; font-size: 0.68rem; color: var(--text-tertiary); line-height: 1.8; }
 

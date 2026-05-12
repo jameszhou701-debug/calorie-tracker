@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div class="app">
@@ -293,23 +293,67 @@
   <!-- TAB 4: 进度追踪 -->
   <!-- ================================================================ -->
   <div class="tab-content" id="tab-progress">
+    <!-- 今日能量平衡 -->
     <div class="card">
-      <div class="card-title"><span class="icon icon-blue">📊</span>今日进度</div>
+      <div class="card-title"><span class="icon icon-blue">⚡</span>今日能量平衡</div>
+      <div class="energy-summary">
+        <div class="energy-item energy-in">
+          <div class="energy-icon">🍽</div>
+          <div class="energy-val" id="progCalIn">0</div>
+          <div class="energy-label">热量摄入</div>
+        </div>
+        <div class="energy-arrow">−</div>
+        <div class="energy-item energy-out">
+          <div class="energy-icon">🔥</div>
+          <div class="energy-val" id="progExOut">0</div>
+          <div class="energy-label">运动消耗</div>
+        </div>
+        <div class="energy-arrow">−</div>
+        <div class="energy-item energy-bmr">
+          <div class="energy-icon">🫀</div>
+          <div class="energy-val" id="progBmrNow">0</div>
+          <div class="energy-label" id="progBmrLabel">基础代谢</div>
+        </div>
+        <div class="energy-arrow">=</div>
+        <div class="energy-item energy-net" id="progNetWrap">
+          <div class="energy-val" id="progNet">0</div>
+          <div class="energy-label">当前差值</div>
+        </div>
+      </div>
+      <div class="energy-bar-row">
+        <div class="energy-bar-label">热量摄入进度</div>
+        <div class="progress-track"><div class="progress-fill safe" id="dailyBar" style="width:0%"></div></div>
+        <div class="progress-stats" style="margin-top:4px;">
+          <span id="dailyLabel">0 / 0</span>
+          <span style="color:var(--text-tertiary);margin:0 4px;">·</span>
+          <span>日目标</span>
+          <strong id="dailyTargetDisplay">0</strong> 大卡
+        </div>
+      </div>
+      <div class="energy-diff" id="energyDiff" style="display:none;">
+        <span id="diffText"></span>
+      </div>
+    </div>
+
+    <!-- 运动消耗进度（有鼓励） -->
+    <div class="card">
+      <div class="card-title"><span class="icon icon-orange">🏃</span>运动消耗进度</div>
       <div class="progress-container">
         <div class="progress-header">
-          <span class="progress-title">热量摄入进度</span>
-          <span class="progress-stats"><strong id="dailyPct">0%</strong><span style="color:var(--text-tertiary);margin:0 4px;">·</span><span id="dailyLabel">0/0 大卡</span></span>
+          <span class="progress-title">今日运动消耗</span>
+          <span class="progress-stats"><strong id="exPct">0%</strong><span style="color:var(--text-tertiary);margin:0 4px;">·</span><span id="exLabel">0 / 0 大卡</span></span>
         </div>
-        <div class="progress-track"><div class="progress-fill safe" id="dailyBar" style="width:0%"></div></div>
+        <div class="progress-track"><div class="progress-fill safe" id="exBar" style="width:0%"></div></div>
       </div>
       <div class="milestones">
-        <div class="milestone-dot" data-threshold="25"><div class="milestone-circle">🌱</div><div class="milestone-text">起步 25%</div></div>
-        <div class="milestone-dot" data-threshold="50"><div class="milestone-circle">🔥</div><div class="milestone-text">过半 50%</div></div>
-        <div class="milestone-dot" data-threshold="75"><div class="milestone-circle">⚡</div><div class="milestone-text">冲刺 75%</div></div>
+        <div class="milestone-dot" data-threshold="25"><div class="milestone-circle">🏃</div><div class="milestone-text">起步 25%</div></div>
+        <div class="milestone-dot" data-threshold="50"><div class="milestone-circle">💦</div><div class="milestone-text">过半 50%</div></div>
+        <div class="milestone-dot" data-threshold="75"><div class="milestone-circle">🔥</div><div class="milestone-text">冲刺 75%</div></div>
         <div class="milestone-dot" data-threshold="100"><div class="milestone-circle">🏆</div><div class="milestone-text">达标!</div></div>
       </div>
-      <div id="dailyEnc" class="enc-banner"></div>
+      <div id="exEnc" class="enc-banner"></div>
     </div>
+
     <div class="card">
       <div class="card-title"><span class="icon icon-purple">📅</span>本周概览</div>
       <div class="week-row" id="weekGrid"></div>
@@ -364,8 +408,8 @@
   </div>
 </div>
 
-<script src="data.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=6"></script>
+<script src="app.js?v=6"></script>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>

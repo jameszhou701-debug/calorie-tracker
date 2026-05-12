@@ -571,35 +571,81 @@ function calNextMonth() {
 // =====================================================
 function renderProgress() {
   if (!state.dailyCalorieTarget) return;
-  const total = foodTotalToday();
-  const pct = Math.min(Math.round(total / state.dailyCalorieTarget * 100), 120);
+  const totalCalIn = foodTotalToday();
+  const totalExOut = exTotalToday();
 
-  $('dailyPct').textContent = pct + '%';
-  $('dailyLabel').textContent = `${total} / ${state.dailyCalorieTarget} 大卡`;
+  // Current-hour BMR: BMR * (hours elapsed today / 24)
+  const now = new Date();
+  const hoursElapsed = now.getHours() + now.getMinutes() / 60;
+  const currentBmr = Math.round((state.bmr || 0) * Math.min(hoursElapsed / 24, 1));
+  
+  // Current net: intake - exercise - current BMR
+  const currentNet = totalCalIn - totalExOut - currentBmr;
+  // Daily target net: target - exercise target - full BMR
+  const dailyTargetNet = state.dailyCalorieTarget - (state.dailyExerciseBurn || 0) - (state.bmr || 0);
+
+  // Update energy summary
+  $('progCalIn').textContent = totalCalIn;
+  $('progExOut').textContent = totalExOut;
+  $('progBmrNow').textContent = currentBmr;
+  $('progBmrLabel').textContent = '基础代谢 (' + Math.round(hoursElapsed) + 'h)';
+  $('progNet').textContent = (currentNet >= 0 ? '+' : '') + currentNet;
+  const netWrap = $('progNetWrap');
+  netWrap.className = 'energy-item energy-net ' + (currentNet > 0 ? 'positive' : 'negative');
+
+  // Calories intake bar (no encouragement)
+  const pct = Math.min(Math.round(totalCalIn / state.dailyCalorieTarget * 100), 120);
+  $('dailyLabel').textContent = totalCalIn + ' / ' + state.dailyCalorieTarget + ' 大卡';
+  $('dailyTargetDisplay').textContent = state.dailyCalorieTarget;
   const bar = $('dailyBar');
   bar.style.width = Math.min(pct, 100) + '%';
   bar.className = 'progress-fill ' + (pct <= 75 ? 'safe' : pct <= 100 ? 'caution' : 'over');
 
-  // Milestones
-  document.querySelectorAll('.milestone-dot').forEach(m => {
-    const th = parseInt(m.dataset.threshold);
-    if (pct >= th && !m.classList.contains('reached')) {
-      m.classList.add('reached');
-      const c = m.querySelector('.milestone-circle');
-      c.classList.add('boom');
-      setTimeout(() => c.classList.remove('boom'), 500);
-    }
-  });
+  // Energy diff line
+  const diff = $('energyDiff');
+  const diffText = $('diffText');
+  diff.style.display = 'block';
+  if (currentNet < 0) {
+    diff.className = 'energy-diff deficit';
+    diffText.textContent = '🔥 当前热量缺口 ' + Math.abs(currentNet) + ' 大卡（日目标缺口 ' + Math.abs(dailyTargetNet) + ' 大卡）';
+  } else if (currentNet > 0) {
+    diff.className = 'energy-diff surplus';
+    diffText.textContent = '⚠ 当前热量盈余 +' + currentNet + ' 大卡（日目标缺口 ' + dailyTargetNet + ' 大卡）';
+  } else {
+    diff.className = 'energy-diff';
+    diffText.textContent = '✅ 当前能量平衡（日目标缺口 ' + dailyTargetNet + ' 大卡）';
+  }
 
-  // Daily encouragement
-  const enc = $('dailyEnc');
-  const ths = [0, 25, 50, 75, 100, 110];
-  for (const t of ths) {
-    if (pct <= t) {
-      const e = ENCOURAGEMENTS.daily[t] || ENCOURAGEMENTS.daily[110];
-      enc.textContent = e.text;
-      enc.className = 'enc-banner ' + e.type;
-      break;
+  // Exercise progress bar (WITH encouragement + milestones)
+  if (state.dailyExerciseBurn && state.dailyExerciseBurn > 0) {
+    const exPct = Math.min(Math.round(totalExOut / state.dailyExerciseBurn * 100), 120);
+    $('exPct').textContent = exPct + '%';
+    $('exLabel').textContent = totalExOut + ' / ' + state.dailyExerciseBurn + ' 大卡';
+    const exBar = $('exBar');
+    exBar.style.width = Math.min(exPct, 100) + '%';
+    exBar.className = 'progress-fill ' + (exPct <= 50 ? 'caution' : exPct <= 100 ? 'safe' : 'over');
+
+    // Exercise milestones
+    document.querySelectorAll('#tab-progress .milestone-dot').forEach(m => {
+      const th = parseInt(m.dataset.threshold);
+      if (exPct >= th && !m.classList.contains('reached')) {
+        m.classList.add('reached');
+        const c = m.querySelector('.milestone-circle');
+        c.classList.add('boom');
+        setTimeout(() => c.classList.remove('boom'), 500);
+      }
+    });
+
+    // Exercise encouragement
+    const exEnc = $('exEnc');
+    const ths = [0, 25, 50, 75, 100, 110];
+    for (const t of ths) {
+      if (exPct <= t) {
+        const e = ENCOURAGEMENTS.daily[t] || ENCOURAGEMENTS.daily[110];
+        exEnc.textContent = e.text;
+        exEnc.className = 'enc-banner ' + e.type;
+        break;
+      }
     }
   }
 

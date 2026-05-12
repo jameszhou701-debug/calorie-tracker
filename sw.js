@@ -2,7 +2,7 @@
 // 热量追踪 - Service Worker
 // 离线缓存 + PWA 支持
 // ============================================================
-const CACHE_NAME = 'calorie-tracker-v5-ai-camera';
+const CACHE_NAME = 'calorie-tracker-v6-ai-camera';
 const ASSETS = [
   './',
   './index.html',
