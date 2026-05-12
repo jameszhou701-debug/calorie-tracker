@@ -394,6 +394,56 @@ body::before {
 .energy-diff.surplus { color: var(--red); border-color: var(--red-bg); }
 .energy-diff.deficit { color: var(--green); border-color: var(--green-bg); }
 
+
+/* ===== BODY TYPE GRID ===== */
+.body-type-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.body-type-option {
+  padding: 12px 8px; border-radius: var(--radius-xs);
+  background: var(--surface); border: 2px solid transparent;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.body-type-option:active { transform: scale(0.95); }
+.body-type-option.selected { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); background: var(--card2); }
+.body-type-option .bt-emoji { font-size: 1.6rem; display: block; margin-bottom: 2px; }
+.body-type-option .bt-name { font-size: 0.72rem; font-weight: 600; }
+.body-type-option .bt-desc { font-size: 0.6rem; color: var(--text-tertiary); }
+
+/* ===== BODY GOAL GRID ===== */
+.body-goal-grid {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.body-goal-option {
+  flex: 1; min-width: 72px; padding: 10px 6px;
+  border-radius: var(--radius-xs); background: var(--surface);
+  border: 2px solid transparent; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.body-goal-option:active { transform: scale(0.95); }
+.body-goal-option.selected { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); background: var(--card2); }
+.body-goal-option .bg-emoji { font-size: 1.3rem; display: block; }
+.body-goal-option .bg-name { font-size: 0.68rem; font-weight: 600; }
+.body-goal-option .bg-desc { font-size: 0.58rem; color: var(--text-tertiary); }
+
+/* ===== EXERCISE GUIDE ===== */
+.exercise-guide { margin-top: 8px; }
+.ex-guide-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.ex-guide-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+.ex-guide-day {
+  background: var(--surface); border-radius: var(--radius-xs); padding: 8px 4px;
+  text-align: center; font-size: 0.62rem; border: 1px solid var(--border);
+}
+.ex-guide-day .ex-day-icon { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+.ex-guide-day .ex-day-name { font-weight: 600; color: var(--text-secondary); }
+.ex-guide-day .ex-day-detail { color: var(--text-tertiary); margin-top: 2px; font-size: 0.58rem; }
+.ex-guide-tips {
+  padding: 10px 14px; background: var(--surface);
+  border-radius: var(--radius-xs); font-size: 0.72rem;
+  color: var(--text-secondary); border: 1px dashed var(--border);
+}
+.ex-guide-tips::before { content: '💡 营养贴士: '; color: var(--orange); font-weight: 600; }
+
 /* ===== FOOTER ===== */
 .footer { text-align: center; padding: 24px 0; font-size: 0.68rem; color: var(--text-tertiary); line-height: 1.8; }
 
@@ -551,6 +601,56 @@ body::before {
   font-weight: 700; color: var(--orange);
   font-size: 0.9rem; min-width: 60px; text-align: right;
 }
+
+
+/* ===== BODY TYPE GRID ===== */
+.body-type-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.body-type-option {
+  padding: 12px 8px; border-radius: var(--radius-xs);
+  background: var(--surface); border: 2px solid transparent;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.body-type-option:active { transform: scale(0.95); }
+.body-type-option.selected { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); background: var(--card2); }
+.body-type-option .bt-emoji { font-size: 1.6rem; display: block; margin-bottom: 2px; }
+.body-type-option .bt-name { font-size: 0.72rem; font-weight: 600; }
+.body-type-option .bt-desc { font-size: 0.6rem; color: var(--text-tertiary); }
+
+/* ===== BODY GOAL GRID ===== */
+.body-goal-grid {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.body-goal-option {
+  flex: 1; min-width: 72px; padding: 10px 6px;
+  border-radius: var(--radius-xs); background: var(--surface);
+  border: 2px solid transparent; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.body-goal-option:active { transform: scale(0.95); }
+.body-goal-option.selected { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); background: var(--card2); }
+.body-goal-option .bg-emoji { font-size: 1.3rem; display: block; }
+.body-goal-option .bg-name { font-size: 0.68rem; font-weight: 600; }
+.body-goal-option .bg-desc { font-size: 0.58rem; color: var(--text-tertiary); }
+
+/* ===== EXERCISE GUIDE ===== */
+.exercise-guide { margin-top: 8px; }
+.ex-guide-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+.ex-guide-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+.ex-guide-day {
+  background: var(--surface); border-radius: var(--radius-xs); padding: 8px 4px;
+  text-align: center; font-size: 0.62rem; border: 1px solid var(--border);
+}
+.ex-guide-day .ex-day-icon { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+.ex-guide-day .ex-day-name { font-weight: 600; color: var(--text-secondary); }
+.ex-guide-day .ex-day-detail { color: var(--text-tertiary); margin-top: 2px; font-size: 0.58rem; }
+.ex-guide-tips {
+  padding: 10px 14px; background: var(--surface);
+  border-radius: var(--radius-xs); font-size: 0.72rem;
+  color: var(--text-secondary); border: 1px dashed var(--border);
+}
+.ex-guide-tips::before { content: '💡 营养贴士: '; color: var(--orange); font-weight: 600; }
 
 /* ===== FOOTER ===== */
 .footer { text-align: center; padding: 24px 0; font-size: 0.68rem; color: var(--text-tertiary); line-height: 1.8; }

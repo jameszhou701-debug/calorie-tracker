@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="app">
@@ -31,10 +31,10 @@
 
   <!-- ===== NAV ===== -->
   <nav class="nav" id="mainNav">
-    <button class="nav-btn active" data-tab="profile">👤 数据</button>
-    <button class="nav-btn" data-tab="plan">🎯 计划</button>
+    <button class="nav-btn active" data-tab="profile">👤 我的数据</button>
+    <button class="nav-btn" data-tab="plan">🎯 体重计划</button>
     <button class="nav-btn" data-tab="food">🍽 运动饮食</button>
-    <button class="nav-btn" data-tab="progress">📊 进度</button>
+    <button class="nav-btn" data-tab="progress">📊 完成进度</button>
   </nav>
 
   <!-- ================================================================ -->
@@ -100,6 +100,10 @@
           <button class="toggle-btn gain" data-val="gain">💪 增重</button>
         </div>
       </div>
+      <div class="field">
+        <label class="field-label">目标体型</label>
+        <div class="body-goal-grid" id="bodyGoalGrid"></div>
+      </div>
       <div class="field-row">
         <div class="field"><label class="field-label">目标体重</label><input type="number" class="field-input" id="targetWeight" value="65" min="30" max="200" step="0.1" placeholder="目标体重"><span class="field-unit">kg</span></div>
         <div class="field"><label class="field-label">目标天数</label><input type="number" class="field-input" id="targetDays" value="60" min="7" max="365" placeholder="计划天数"><span class="field-unit">天</span></div>
@@ -149,6 +153,12 @@
       <div class="card-title"><span class="icon icon-green">🥗</span>每日膳食指南</div>
       <div class="diet-source">依据：中国居民膳食指南 (2022)</div>
       <div class="diet-grid" id="dietGrid"></div>
+    <!-- 运动指南 -->
+    <div class="card" id="exerciseGuideCard" style="display:none;">
+      <div class="card-title"><span class="icon icon-orange">🏋️</span>运动建议</div>
+      <div class="diet-source">针对你的体型和目标定制</div>
+      <div class="exercise-guide" id="exerciseGuide"></div>
+    </div>
     </div>
   </div>
 
@@ -271,22 +281,6 @@
       </div>
     </div>
 
-    <!-- 日历视图 (new) -->
-    <div class="sub-tab" id="sub-calendar">
-      <div class="card">
-        <div class="card-title"><span class="icon icon-purple">📅</span>月度日历</div>
-        <div class="calendar-nav">
-          <button class="btn btn-ghost btn-sm" onclick="calPrevMonth()">◀</button>
-          <span class="calendar-month" id="calMonth">2026年5月</span>
-          <button class="btn btn-ghost btn-sm" onclick="calNextMonth()">▶</button>
-        </div>
-        <div class="calendar-grid" id="calendarGrid"></div>
-        <div class="calendar-legend">
-          <span>🍽 吃</span><span>🏃 动</span><span>⚖ 缺口</span>
-        </div>
-        <div id="calendarDetail" class="calendar-detail"></div>
-      </div>
-    </div>
   </div>
 
   <!-- ================================================================ -->
@@ -366,6 +360,21 @@
       </div>
       <div id="weeklyEnc" class="enc-banner" style="margin-top:16px;"></div>
     </div>
+    <div class="card">
+      <div class="card-title"><span class="icon icon-purple">📅</span>月度日历</div>
+      <div class="calendar-nav">
+        <button class="btn btn-ghost btn-sm" onclick="calPrevMonth()">◀</button>
+        <span class="calendar-month" id="calMonth">2026年5月</span>
+        <button class="btn btn-ghost btn-sm" onclick="calNextMonth()">▶</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="calendar-legend">
+        <span><span class="cal-dot eat" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;"></span>吃</span>
+        <span><span class="cal-dot ex" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;"></span>动</span>
+        <span><span class="cal-dot def" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;"></span>缺口</span>
+      </div>
+      <div id="calendarDetail" class="calendar-detail"></div>
+    </div>
   </div>
 
   <!-- ===== AI 识别结果确认弹窗 ===== -->
@@ -408,8 +417,8 @@
   </div>
 </div>
 
-<script src="data.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="app.js?v=7"></script>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>

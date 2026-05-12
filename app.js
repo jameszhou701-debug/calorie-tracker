@@ -8,6 +8,8 @@ const $ = (id) => document.getElementById(id);
 // --- State ---
 let state = {
   avatar: 'pig',
+  bodyType: 'standard',
+  bodyGoal: 'slim',
   gender: 'male', goalType: 'lose',
   age: 30, height: 170, weight: 70,
   bmr: null, standardWeight: null, bmi: null,
@@ -40,7 +42,7 @@ function exTotalToday() { return todayExercise().reduce((s, e) => s + (e.kcal ||
 // --- Persistence ---
 function saveState() {
   const toSave = {
-    avatar: state.avatar, gender: state.gender, goalType: state.goalType,
+    avatar: state.avatar, bodyType: state.bodyType, bodyGoal: state.bodyGoal, gender: state.gender, goalType: state.goalType,
     age: state.age, height: state.height, weight: state.weight,
     bmr: state.bmr, standardWeight: state.standardWeight, bmi: state.bmi,
     targetWeight: state.targetWeight, targetDays: state.targetDays,
@@ -101,7 +103,7 @@ function switchTab(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   $(`tab-${name}`).classList.add('active');
   document.querySelector(`.nav-btn[data-tab="${name}"]`).classList.add('active');
-  if (name === 'progress') renderProgress();
+  if (name === 'progress') { renderProgress(); renderCalendar(); }
   if (name === 'food') { renderFoodList(); updateFoodTotal(); }
 }
 
@@ -118,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
       $(`sub-${btn.dataset.sub}`).classList.add('active');
-      if (btn.dataset.sub === 'calendar') renderCalendar();
       if (btn.dataset.sub === 'exercise') renderExerciseList();
       if (btn.dataset.sub === 'eat') { renderFoodList(); updateFoodTotal(); }
     });
@@ -209,14 +210,15 @@ function calculateBMR() {
   state.height = parseInt($('height').value) || 170;
   state.weight = parseFloat($('weight').value) || 70;
 
-  state.bmr = Math.round(calcBMR(state.weight, state.height, state.age, state.gender));
+  const bt = BODY_TYPES.find(b => b.id === state.bodyType) || { bmrFactor: 1.0 };
+  state.bmr = Math.round(calcBMR(state.weight, state.height, state.age, state.gender) * bt.bmrFactor);
   state.standardWeight = Math.round(calcStandardWeight(state.height, state.gender));
   state.bmi = calcBMI(state.weight, state.height);
 
   $('valBMR').textContent = state.bmr;
   $('valStdWeight').textContent = state.standardWeight;
   $('valBMI').textContent = state.bmi.toFixed(1);
-  const bmiInfo = getBMICategory(state.bmi);
+  const bmiInfo = getBMICategory(state.bmi, state.bodyType);
   $('valBodyType').textContent = bmiInfo.cat;
   $('valBodyType').style.color = bmiInfo.color;
   $('bmrResults').style.display = 'block';
@@ -270,6 +272,7 @@ function generatePlan() {
   $('planResults').style.display = 'block';
 
   renderDietGuide();
+  renderExerciseGuide();
   updateFoodTotal();
   saveState();
 }
@@ -722,7 +725,7 @@ function init() {
     $('valBMR').textContent = state.bmr;
     $('valStdWeight').textContent = state.standardWeight;
     $('valBMI').textContent = state.bmi.toFixed(1);
-    const bi = getBMICategory(state.bmi);
+    const bi = getBMICategory(state.bmi, state.bodyType);
     $('valBodyType').textContent = bi.cat;
     $('valBodyType').style.color = bi.color;
     $('bmrResults').style.display = 'block';
@@ -739,6 +742,7 @@ function init() {
     $('planDeficit').style.color = state.goalType === 'lose' ? 'var(--red)' : 'var(--green)';
     $('planResults').style.display = 'block';
     renderDietGuide();
+    renderExerciseGuide();
   }
 
   renderFoodList();

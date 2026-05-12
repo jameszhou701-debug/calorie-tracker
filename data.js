@@ -179,6 +179,31 @@ const DIET_GUIDELINES = {
 };
 
 // ============================================================
+// 体型选择
+// ============================================================
+const BODY_TYPES = [
+  { id: "standard", name: "匀称型", emoji: "🧍", desc: "身材比例均衡", bmiAdjust: 0, bmrFactor: 1.0 },
+  { id: "muscular", name: "肌肉型", emoji: "💪", desc: "肌肉含量较高", bmiAdjust: 0.3, bmrFactor: 1.08 },
+  { id: "chubby", name: "微胖型", emoji: "🐻", desc: "体脂略高", bmiAdjust: -0.3, bmrFactor: 0.95 },
+  { id: "apple", name: "苹果型", emoji: "🍎", desc: "腹部脂肪较多", bmiAdjust: -0.5, bmrFactor: 0.93 },
+  { id: "pear", name: "梨型", emoji: "🍐", desc: "下半身脂肪较多", bmiAdjust: 0, bmrFactor: 0.97 },
+  { id: "slim", name: "苗条型", emoji: "🧘", desc: "骨架小体脂低", bmiAdjust: 0.5, bmrFactor: 1.02 },
+  { id: "athletic", name: "运动型", emoji: "🏃", desc: "体能好肌肉适中", bmiAdjust: 0.2, bmrFactor: 1.06 },
+  { id: "stocky", name: "结实型", emoji: "🦍", desc: "骨架大体质壮", bmiAdjust: -0.2, bmrFactor: 1.04 },
+];
+
+// ============================================================
+// 目标体型（用于计划目标）
+// ============================================================
+const BODY_GOALS = [
+  { id: "slim", name: "苗条型", emoji: "🧘", desc: "低体脂，线条清晰" },
+  { id: "muscular", name: "肌肉型", emoji: "💪", desc: "增肌塑形，结实有力" },
+  { id: "toned", name: "紧致型", emoji: "✨", desc: "匀称有线条，健康活力" },
+  { id: "athletic", name: "运动型", emoji: "🏃", desc: "体能优先，灵活敏捷" },
+  { id: "curvy", name: "曲线型", emoji: "🌊", desc: "保持曲线，丰满匀称" },
+];
+
+// ============================================================
 // 头像选择
 // ============================================================
 const AVATARS = [
@@ -216,10 +241,13 @@ function calcBMI(weight, height) {
   return weight / (h * h);
 }
 
-function getBMICategory(bmi) {
-  if (bmi < 18.5) return { cat: "偏瘦", color: "#ff9f43" };
-  if (bmi < 24.0) return { cat: "正常", color: "#00ce7c" };
-  if (bmi < 28.0) return { cat: "偏胖", color: "#ff9f43" };
+function getBMICategory(bmi, bodyTypeId) {
+  // Adjust BMI based on body type (muscle weighs more than fat)
+  const bt = BODY_TYPES.find(b => b.id === bodyTypeId) || { bmiAdjust: 0 };
+  const adjBmi = bmi + (bt.bmiAdjust || 0);
+  if (adjBmi < 18.5) return { cat: "偏瘦", color: "#ff9f43" };
+  if (adjBmi < 24.0) return { cat: "正常", color: "#00ce7c" };
+  if (adjBmi < 28.0) return { cat: "偏胖", color: "#ff9f43" };
   return { cat: "肥胖", color: "#ff6b6b" };
 }
 
@@ -231,6 +259,77 @@ function calcDailyDeficit(currentWeight, targetWeight, days) {
   return Math.round(Math.abs(targetWeight - currentWeight) * 7700 / days);
 }
 
+
+// ============================================================
+// 运动指南 - 基于体型+目标
+// ============================================================
+const EXERCISE_GUIDES = {
+  muscular: {
+    title: "增肌塑形训练方案",
+    weekly: [
+      { day: "力量训练", detail: "大重量低次数(6-8次), 胸/背/腿分化", icon: "🏋️", type: "strength" },
+      { day: "力量训练", detail: "肩/手臂, 中等重量(10-12次)", icon: "💪", type: "strength" },
+      { day: "有氧运动", detail: "30分钟慢跑或骑行, 保持心肺", icon: "🏃", type: "running" },
+      { day: "力量训练", detail: "腿/核心, 深蹲硬拉为主", icon: "🦵", type: "strength" },
+      { day: "有氧+拉伸", detail: "HIIT 20分钟 + 瑜伽拉伸", icon: "🧘", type: "hiit" },
+      { day: "休息", detail: "充分休息, 肌肉生长日", icon: "😴", type: null },
+      { day: "轻度活动", detail: "散步或游泳, 促进恢复", icon: "🚶", type: "walking" },
+    ],
+    tips: "蛋白质摄入目标: 1.6-2.0g/kg体重, 碳水: 4-6g/kg体重"
+  },
+  slim: {
+    title: "减脂塑形训练方案",
+    weekly: [
+      { day: "HIIT训练", detail: "30分钟高强度间歇, 全身燃脂", icon: "💦", type: "hiit" },
+      { day: "有氧运动", detail: "45分钟慢跑, 心率130-150", icon: "🏃", type: "running" },
+      { day: "力量+有氧", detail: "轻重量(15-20次)+ 30分钟快走", icon: "🏋️", type: "strength" },
+      { day: "有氧运动", detail: "40分钟游泳或骑行", icon: "🚴", type: "cycling" },
+      { day: "HIIT训练", detail: "25分钟, 核心+全身", icon: "💦", type: "hiit" },
+      { day: "休息或瑜伽", detail: "轻度拉伸瑜伽, 恢复日", icon: "🧘", type: "yoga" },
+      { day: "户外活动", detail: "爬山或羽毛球, 趣味运动", icon: "⛰", type: "hiking" },
+    ],
+    tips: "保持热量缺口300-500大卡/天, 蛋白质1.5g/kg体重"
+  },
+  toned: {
+    title: "紧致塑形训练方案",
+    weekly: [
+      { day: "力量训练", detail: "中等重量(12-15次), 全身热身", icon: "🏋️", type: "strength" },
+      { day: "有氧运动", detail: "35分钟跑步或椭圆机", icon: "🏃", type: "running" },
+      { day: "普拉提/瑜伽", detail: "核心力量+柔韧性", icon: "🧘", type: "yoga" },
+      { day: "力量训练", detail: "臀腿+核心重点", icon: "🦵", type: "strength" },
+      { day: "有氧运动", detail: "30分钟跳绳或快走", icon: "🪢", type: "jumping_rope" },
+      { day: "休息", detail: "身体修复日", icon: "😴", type: null },
+      { day: "户外运动", detail: "羽毛球/篮球等球类运动", icon: "🏸", type: "badminton" },
+    ],
+    tips: "均衡饮食, 蛋白质1.2-1.5g/kg, 保持热量接近维持水平"
+  },
+  athletic: {
+    title: "综合体能训练方案",
+    weekly: [
+      { day: "力量+HIIT", detail: "复合动作+ 15分钟HIIT", icon: "💪", type: "hiit" },
+      { day: "跑步训练", detail: "40分钟间歇跑或长跑", icon: "🏃", type: "running_fast" },
+      { day: "力量训练", detail: "爆发力训练, 快速动作", icon: "🏋️", type: "strength" },
+      { day: "游泳/骑行", detail: "45分钟有氧耐力", icon: "🏊", type: "swimming" },
+      { day: "球类/登山", detail: "团队运动或户外登山", icon: "⛰", type: "hiking" },
+      { day: "休息", detail: "充分恢复", icon: "😴", type: null },
+      { day: "柔韧训练", detail: "瑜伽+拉伸, 防伤", icon: "🧘", type: "yoga" },
+    ],
+    tips: "碳水4-5g/kg, 蛋白质1.5g/kg, 保证充足睡眠"
+  },
+  curvy: {
+    title: "曲线保持训练方案",
+    weekly: [
+      { day: "有氧运动", detail: "30分钟快走或慢跑", icon: "🚶", type: "brisk_walk" },
+      { day: "力量训练", detail: "臀腿+腰腹重点, 中等重量", icon: "🦵", type: "strength" },
+      { day: "瑜伽/普拉提", detail: "塑形拉伸, 改善体态", icon: "🧘", type: "yoga" },
+      { day: "有氧运动", detail: "35分钟骑行或游泳", icon: "🚴", type: "cycling" },
+      { day: "力量训练", detail: "上肢+核心, 轻重量(15-20次)", icon: "💪", type: "strength" },
+      { day: "休息", detail: "放松恢复", icon: "😴", type: null },
+      { day: "户外活动", detail: "爬山或散步1小时", icon: "⛰", type: "hiking" },
+    ],
+    tips: "保持热量平衡, 蛋白质1.2g/kg, 健康脂肪适量摄入"
+  }
+};
 // ============================================================
 // 鼓励语库
 // ============================================================
