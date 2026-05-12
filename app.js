@@ -15,7 +15,7 @@ let state = {
   exerciseType: 'running', exerciseDays: 4,
   dailyCalorieTarget: null, dailyExerciseBurn: null,
   dailyExerciseMinutes: null, dailyDeficit: null,
-  // food: { "2026-05-06": [{name,grams,kcal,time,meal}] }
+  // food: { "2026-05-06": [{name,grams,kcal,protein,fat,carbs,time,meal}] }
   // exercise: { "2026-05-06": [{type,minutes,kcal,time}] }
   foodHistory: {},
   exerciseHistory: {},
@@ -31,8 +31,11 @@ function todayFoods() { return state.foodHistory[getToday()] || []; }
 function todayExercise() { return state.exerciseHistory[getToday()] || []; }
 function todayWater() { return state.waterHistory[getToday()] || 0; }
 
-function foodTotalToday() { return todayFoods().reduce((s, f) => s + f.kcal, 0); }
-function exTotalToday() { return todayExercise().reduce((s, e) => s + e.kcal, 0); }
+function foodTotalToday() { return todayFoods().reduce((s, f) => s + (f.kcal || 0), 0); }
+function proteinToday() { return todayFoods().reduce((s, f) => s + (f.protein || 0), 0); }
+function fatToday() { return todayFoods().reduce((s, f) => s + (f.fat || 0), 0); }
+function carbsToday() { return todayFoods().reduce((s, f) => s + (f.carbs || 0), 0); }
+function exTotalToday() { return todayExercise().reduce((s, e) => s + (e.kcal || 0), 0); }
 
 // --- Persistence ---
 function saveState() {
@@ -79,7 +82,7 @@ function updateWeekHistory() {
   const history = JSON.parse(localStorage.getItem('calorie_week_history_v3') || '{}');
   if (!history[weekKey]) history[weekKey] = {};
   const foods = state.foodHistory[today] || [];
-  const totalCal = foods.reduce((s, f) => s + f.kcal, 0);
+  const totalCal = foods.reduce((s, f) => s + (f.kcal || 0), 0);
   history[weekKey][today] = {
     totalCal,
     target: state.dailyCalorieTarget,
@@ -321,7 +324,7 @@ function addFood() {
     else return;
   }
   if (!state.foodHistory[date]) state.foodHistory[date] = [];
-  state.foodHistory[date].push({ name, grams, kcal, time: new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), meal });
+  state.foodHistory[date].push({ name, grams, kcal, protein: 0, fat: 0, carbs: 0, time: new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), meal });
   $('foodSearch').value = ''; $('foodGrams').value = '100'; $('foodCalories').value = '';
   delete $('foodGrams').dataset.kcalPer100;
   renderFoodList(); updateFoodTotal(); saveState();
@@ -364,7 +367,7 @@ function renderFoodList() {
         <span class="fi-badge ${mealClasses[f.meal]||'sn'}">${mealLabels[f.meal]||'加餐'}</span>
         <span class="fi-time">${f.time}</span>
         <span class="fi-name">${f.name}</span>
-        <span class="fi-grams">${f.grams}g</span>
+        <span class="fi-grams">${f.grams}g</span><span class="ai-food-macros"><span class="macro-tag p">${f.protein||0}g</span><span class="macro-tag f">${f.fat||0}g</span><span class="macro-tag c">${f.carbs||0}g</span></span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span class="fi-cal">${f.kcal} 大卡</span>
@@ -378,6 +381,9 @@ function renderFoodList() {
 function updateFoodTotal() {
   const total = foodTotalToday();
   $('totalCalories').textContent = `${total} 大卡`;
+  $('totalProtein').textContent = proteinToday();
+  $('totalFat').textContent = fatToday();
+  $('totalCarbs').textContent = carbsToday();
   $('foodTotal').style.display = 'block';
   if (state.dailyCalorieTarget) {
     const rem = state.dailyCalorieTarget - total;
@@ -540,7 +546,7 @@ function showCalDetail(dateStr) {
     <div class="cal-detail-row"><span>🍽 饮食摄入</span><span class="cal-detail-val" style="color:var(--green);">${foodCal} 大卡</span></div>
     <div class="cal-detail-row"><span>🏃 运动消耗</span><span class="cal-detail-val" style="color:var(--orange);">${exCal} 大卡</span></div>
     <div class="cal-detail-row"><span>⚖ 热量${defLabel}</span><span class="cal-detail-val" style="color:${state.dailyCalorieTarget && state.dailyCalorieTarget >= foodCal ? 'var(--green)' : 'var(--red)'};">${def} 大卡</span></div>
-    ${foods.length > 0 ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--text-tertiary);">食物: ${foods.map(f=>f.name+'('+f.kcal+'kcal)').join(', ')}</div>` : ''}
+    ${foods.length > 0 ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--text-tertiary);">食物: ${foods.map(f=>f.name+'('+f.kcal+'kcal P'+ (f.protein||0)+')').join(', ')}</div>` : ''}
     ${exs.length > 0 ? `<div style="margin-top:4px;font-size:0.78rem;color:var(--text-tertiary);">运动: ${exs.map(e=>e.name+'('+e.minutes+'min)').join(', ')}</div>` : ''}
   `;
   detail.classList.add('show');
@@ -729,6 +735,15 @@ function triggerCamera() {
   $('cameraInput').click();
 }
 
+function triggerAlbum() {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) {
+    openSettings();
+    return;
+  }
+  $('albumInput').click();
+}
+
 function handleCameraImage(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -753,7 +768,7 @@ async function callGeminiVision(base64Image) {
     return;
   }
 
-  const prompt = '你是一个营养师。请分析这张食物照片。\n\n请严格按照以下JSON格式返回，不要包含任何其他文字、markdown或代码块标记：\n\n{\n  "foods": [\n    {\n      "name": "食物中文名称",\n      "grams": 估算克数(整数),\n      "kcal": 估算热量(整数大卡)\n    }\n  ],\n  "totalKcal": 总热量(整数),\n  "note": "简短说明(10字以内)"\n}\n\n要求：\n- name 用中文\n- grams 估算食物的大概克数\n- kcal 基于常见食物的标准热量\n- 如果无法确定，给出合理估算\n- 返回纯JSON，不要有markdown代码块';
+  const prompt = '你是一个营养师。请分析这张食物照片。\n\n请严格按照以下JSON格式返回，不要包含任何其他文字、markdown或代码块标记：\n\n{\n  "foods": [\n    {\n      "name": "食物中文名称",\n      "grams": 估算克数(整数),\n      "kcal": 估算热量(整数大卡),\n      "protein": 蛋白质克数(整数),\n      "fat": 脂肪克数(整数),\n      "carbs": 碳水克数(整数)\n    }\n  ],\n  "totalKcal": 总热量(整数),\n  "totalProtein": 总蛋白质(整数克),\n  "totalFat": 总脂肪(整数克),\n  "totalCarbs": 总碳水(整数克),\n  "note": "简短说明(10字以内)"\n}\n\n要求：\n- name 用中文\n- grams 估算食物的大概克数\n- protein/fat/carbs 基于常见食物的营养成分估算\n- 如果无法确定，给出合理估算\n- 蛋白质: 肉蛋奶豆约含较高, 蔬菜水果较低\n- 返回纯JSON，不要有markdown代码块';
 
   $('cameraStatus').innerHTML = '<span class="spinner"></span>AI 正在识别食物…';
 
@@ -803,6 +818,9 @@ async function callGeminiVision(base64Image) {
         name: f.name,
         grams: f.grams || 100,
         kcal: f.kcal || 0,
+        protein: f.protein || 0,
+        fat: f.fat || 0,
+        carbs: f.carbs || 0,
       }));
 
       showAIResultModal(pendingAIResults, result.note || '');
@@ -833,7 +851,12 @@ function showAIResultModal(foods, note) {
       <span class="ai-food-emoji">${getFoodEmoji(f.name)}</span>
       <div class="ai-food-info">
         <div class="ai-food-name">${f.name}</div>
-        <div class="ai-food-detail">约 ${f.grams} 克 · ${f.kcal} 大卡</div>
+        <div class="ai-food-detail">约 ${f.grams}g · ${f.kcal} kcal</div>
+        <div class="ai-food-macros">
+          <span class="macro-tag p">${f.protein||0}g蛋白</span>
+          <span class="macro-tag f">${f.fat||0}g脂肪</span>
+          <span class="macro-tag c">${f.carbs||0}g碳水</span>
+        </div>
       </div>
       <div class="ai-food-edit">
         <input type="number" value="${f.grams}" min="1" max="5000" 
@@ -844,6 +867,11 @@ function showAIResultModal(foods, note) {
       <span class="ai-food-kcal">${f.kcal} kcal</span>
     </div>
   `).join('');
+  
+  const totalP = foods.reduce((s,f) => s + (f.protein||0), 0);
+  const totalF = foods.reduce((s,f) => s + (f.fat||0), 0);
+  const totalC = foods.reduce((s,f) => s + (f.carbs||0), 0);
+  $('aiMacroSum').innerHTML = '<span><span class="macro-dot" style="background:var(--red)"></span>蛋白质 <strong>' + totalP + 'g</strong></span><span><span class="macro-dot" style="background:var(--orange)"></span>脂肪 <strong>' + totalF + 'g</strong></span><span><span class="macro-dot" style="background:var(--blue)"></span>碳水 <strong>' + totalC + 'g</strong></span>';
 
   $('aiModal').style.display = 'flex';
 }
@@ -851,22 +879,25 @@ function showAIResultModal(foods, note) {
 function updateAIResultGram(index, value) {
   const grams = parseInt(value) || 0;
   if (grams <= 0) return;
-  // Recalculate kcal proportionally
   const originalGrams = pendingAIResults[index].grams;
   const originalKcal = pendingAIResults[index].kcal;
+  const originalProtein = pendingAIResults[index].protein || 0;
+  const originalFat = pendingAIResults[index].fat || 0;
+  const originalCarbs = pendingAIResults[index].carbs || 0;
   const ratio = grams / originalGrams;
   if (originalGrams) {
     pendingAIResults[index].grams = grams;
     pendingAIResults[index].kcal = Math.round(originalKcal * ratio);
+    pendingAIResults[index].protein = Math.round(originalProtein * ratio);
+    pendingAIResults[index].fat = Math.round(originalFat * ratio);
+    pendingAIResults[index].carbs = Math.round(originalCarbs * ratio);
   }
-  // Refresh only the kcal display
+  // Refresh display
   const kcalEls = document.querySelectorAll('.ai-food-kcal');
-  if (kcalEls[index]) {
-    kcalEls[index].textContent = pendingAIResults[index].kcal + ' kcal';
-  }
+  if (kcalEls[index]) kcalEls[index].textContent = pendingAIResults[index].kcal + ' kcal';
   const detailEls = document.querySelectorAll('.ai-food-detail');
   if (detailEls[index]) {
-    detailEls[index].textContent = `约 ${grams} 克 · ${pendingAIResults[index].kcal} 大卡`;
+    detailEls[index].textContent = '约 ' + grams + 'g · ' + pendingAIResults[index].kcal + ' kcal · 蛋白' + pendingAIResults[index].protein + 'g';
   }
 }
 
@@ -888,6 +919,9 @@ function confirmAIResult() {
       name: f.name,
       grams: f.grams,
       kcal: f.kcal,
+      protein: f.protein || 0,
+      fat: f.fat || 0,
+      carbs: f.carbs || 0,
       time: now,
       meal: meal
     });

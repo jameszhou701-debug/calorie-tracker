@@ -395,6 +395,8 @@ body::before {
 .btn-camera:active { transform: scale(0.97); }
 .camera-icon { font-size: 1.3rem; }
 .camera-hint { display: block; font-size: 0.72rem; color: var(--text-tertiary); margin-top: 8px; }
+.camera-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn-album { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
 .camera-status { text-align: center; padding: 10px; font-size: 0.8rem; color: var(--accent); margin-bottom: 10px; }
 .camera-status .spinner {
   display: inline-block; width: 16px; height: 16px;
@@ -419,6 +421,45 @@ body::before {
   font-size: 0.72rem; color: var(--text-tertiary);
   text-transform: uppercase; letter-spacing: 1px;
 }
+
+/* Macro nutrients bar */
+.macro-row {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.macro-item {
+  flex: 1; text-align: center; padding: 10px 6px;
+  background: var(--surface); border-radius: var(--radius-xs);
+  font-size: 0.72rem; color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.macro-item strong { display: block; font-size: 1rem; font-weight: 700; }
+.macro-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+.macro-protein .macro-dot { background: var(--red); }
+.macro-fat .macro-dot { background: var(--orange); }
+.macro-carb .macro-dot { background: var(--blue); }
+
+/* AI modal macros summary */
+.modal-macros {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--surface); border-radius: var(--radius-xs);
+  font-size: 0.75rem; color: var(--text-secondary);
+  display: flex; gap: 12px; justify-content: center;
+  border: 1px solid var(--border);
+}
+.modal-macros span { display: flex; align-items: center; gap: 4px; }
+.modal-macros strong { color: var(--text); font-size: 0.85rem; }
+
+/* AI food item macro tags */
+.ai-food-macros {
+  display: flex; gap: 4px; margin-top: 2px;
+}
+.ai-food-macros .macro-tag {
+  font-size: 0.62rem; padding: 1px 6px; border-radius: 4px;
+  font-weight: 600;
+}
+.macro-tag.p { background: rgba(255,107,107,0.15); color: var(--red); }
+.macro-tag.f { background: rgba(255,159,67,0.15); color: var(--orange); }
+.macro-tag.c { background: rgba(84,160,255,0.15); color: var(--blue); }
 
 /* ===== MODAL ===== */
 .modal-overlay {

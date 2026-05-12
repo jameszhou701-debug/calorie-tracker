@@ -12,7 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="app">
@@ -168,15 +168,21 @@
       <div class="card">
         <div class="card-title"><span class="icon icon-orange">🍽</span>饮食记录</div>
         
-        <!-- 拍照识别食物 -->
+        <!-- AI 拍照/相册识别食物 -->
         <div class="camera-row">
-          <button class="btn btn-camera" onclick="triggerCamera()">
-            <span class="camera-icon">📸</span>拍照识别食物
-          </button>
-          <span class="camera-hint">AI 自动识别食物种类和重量</span>
+          <div class="camera-buttons">
+            <button class="btn btn-camera" onclick="triggerCamera()">
+              <span class="camera-icon">📸</span>拍照识别
+            </button>
+            <button class="btn btn-camera btn-album" onclick="triggerAlbum()">
+              <span class="camera-icon">🖼</span>相册选择
+            </button>
+          </div>
+          <span class="camera-hint">AI 自动识别食物种类、重量和营养</span>
         </div>
         <div id="cameraStatus" class="camera-status" style="display:none;"></div>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCameraImage(event)" style="display:none;">
+        <input type="file" id="albumInput" accept="image/*" onchange="handleCameraImage(event)" style="display:none;">
 
         <div class="divider"><span>或手动输入</span></div>
 
@@ -204,6 +210,11 @@
         <div id="foodList" style="margin-top:16px;"></div>
         <div id="foodTotal" style="display:none;">
           <div class="total-bar"><span>今日摄入</span><span style="font-weight:700;color:var(--orange);" id="totalCalories">0 大卡</span></div>
+          <div class="macro-row">
+            <div class="macro-item macro-protein"><span class="macro-dot"></span>蛋白质 <strong id="totalProtein">0</strong>g</div>
+            <div class="macro-item macro-fat"><span class="macro-dot"></span>脂肪 <strong id="totalFat">0</strong>g</div>
+            <div class="macro-item macro-carb"><span class="macro-dot"></span>碳水 <strong id="totalCarbs">0</strong>g</div>
+          </div>
           <div class="total-bar"><span>距离目标</span><span class="remain safe" id="remainingCalories">-</span></div>
         </div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -314,11 +325,11 @@
   </div>
 
   <!-- ===== AI 识别结果确认弹窗 ===== -->
-<div class="modal-overlay" id="aiModal" style="display:none;">
   <div class="modal-box">
     <div class="modal-title">🤖 AI 识别结果</div>
     <div class="modal-body" id="aiResultBody"></div>
     <div class="modal-food-list" id="aiFoodList"></div>
+    <div class="modal-macros" id="aiMacroSum"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cancelAIResult()">取消</button>
       <button class="btn btn-primary" onclick="confirmAIResult()">✓ 确认录入</button>
@@ -353,8 +364,8 @@
   </div>
 </div>
 
-<script src="data.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="data.js?v=5"></script>
+<script src="app.js?v=5"></script>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
