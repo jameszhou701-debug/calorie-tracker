@@ -246,6 +246,9 @@ body::before {
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 .food-dropdown-item:hover { background: var(--surface-hover); }
+.food-search-online { color: var(--accent) !important; cursor: pointer; flex-direction: column; align-items: flex-start; gap: 2px; }
+.food-search-online:hover { background: var(--card2) !important; }
+.food-search-result { color: var(--text) !important; cursor: default; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 0.78rem; }
 .kcal-badge { font-size: 0.72rem; color: var(--text-tertiary); background: var(--card2); padding: 2px 8px; border-radius: 20px; }
 
 .food-item, .ex-item {

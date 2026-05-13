@@ -356,17 +356,25 @@ function searchFood() {
   const dd = $('foodDropdown');
   if (!q) { dd.classList.remove('show'); return; }
   const results = FOOD_DATABASE.filter(f => f.name.includes(q) || f.category.includes(q)).slice(0, 10);
-  dd.innerHTML = results.length === 0
-    ? '<div class="food-dropdown-item" style="color:var(--text-tertiary);">未找到，请手动输入热量</div>'
-    : results.map(f => `<div class="food-dropdown-item" onclick="selectFood('${f.name}', ${f.kcal})">${f.name}<span class="kcal-badge">${f.kcal} 大卡/100g</span></div>`).join('');
+  if (results.length === 0) {
+    dd.innerHTML = '<div class="food-dropdown-item food-search-online" onclick="searchFoodOnline()">🔍 在线搜索「' + q + '」的热量和营养数据' +
+      '<span style="font-size:0.62rem;color:var(--accent);">使用 AI 获取数据</span></div>' +
+      '<div class="food-dropdown-item" style="color:var(--text-tertiary);">本地未找到，你也可以手动输入</div>';
+  } else {
+    dd.innerHTML = results.map(f => '<div class="food-dropdown-item" onclick="selectFood(\'' + f.name.replace(/'/g, "\\'") + '\', ' + f.kcal + ', ' + (f.protein||0) + ', ' + (f.fat||0) + ', ' + (f.carbs||0) + ')">' + f.name + '<span class="kcal-badge">' + f.kcal + ' 大卡/100g</span></div>').join('');
+  }
   dd.classList.add('show');
 }
 
-function selectFood(name, kcalPer100) {
+function selectFood(name, kcalPer100, proteinPer100, fatPer100, carbsPer100) {
   $('foodSearch').value = name;
   $('foodGrams').dataset.kcalPer100 = kcalPer100;
+  $('foodGrams').dataset.proteinPer100 = proteinPer100 || 0;
+  $('foodGrams').dataset.fatPer100 = fatPer100 || 0;
+  $('foodGrams').dataset.carbsPer100 = carbsPer100 || 0;
   const g = parseFloat($('foodGrams').value) || 100;
   $('foodCalories').value = Math.round(kcalPer100 * g / 100);
+  updateMacroPreview();
   $('foodDropdown').classList.remove('show');
 }
 
@@ -377,13 +385,22 @@ function addFood() {
   const date = $('foodDate').value || getToday();
   const meal = $('foodMeal').value || 'snack';
   if (!name) return;
+
+  // Get macros from dataset (set by selectFood or searchFoodOnline)
+  const p100 = parseFloat($('foodGrams').dataset.proteinPer100) || 0;
+  const f100 = parseFloat($('foodGrams').dataset.fatPer100) || 0;
+  const c100 = parseFloat($('foodGrams').dataset.carbsPer100) || 0;
+
   if (!kcal || kcal <= 0) {
     const m = FOOD_DATABASE.find(f => f.name === name);
     if (m) kcal = Math.round(m.kcal * grams / 100);
     else return;
   }
+  const protein = Math.round(p100 * grams / 100);
+  const fat = Math.round(f100 * grams / 100);
+  const carbs = Math.round(c100 * grams / 100);
   if (!state.foodHistory[date]) state.foodHistory[date] = [];
-  state.foodHistory[date].push({ name, grams, kcal, protein: 0, fat: 0, carbs: 0, time: new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), meal });
+  state.foodHistory[date].push({ name, grams, kcal, protein, fat, carbs, time: new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}), meal });
   $('foodSearch').value = ''; $('foodGrams').value = '100'; $('foodCalories').value = '';
   delete $('foodGrams').dataset.kcalPer100;
   renderFoodList(); updateFoodTotal(); saveState();
@@ -393,6 +410,74 @@ function removeFood(date, index) {
   state.foodHistory[date].splice(index, 1);
   if (state.foodHistory[date].length === 0) delete state.foodHistory[date];
   renderFoodList(); updateFoodTotal(); saveState();
+}
+
+// --- 在线搜索食物营养数据 ---
+async function searchFoodOnline() {
+  const q = $('foodSearch').value.trim();
+  if (!q) return;
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if (!apiKey) { openSettings(); return; }
+
+  const dd = $('foodDropdown');
+  dd.innerHTML = '<div class="food-dropdown-item" style="color:var(--accent);"><span class="spinner"></span> AI 正在搜索「' + q + '」的营养数据…</div>';
+  dd.classList.add('show');
+
+  const prompt = '你是一个营养师。请查询食物「' + q + '」的营养数据（每100克）。\n\n请严格按照以下JSON格式返回，不要包含任何其他文字、markdown或代码块标记：\n\n{\n  "name": "食物中文名称",\n  "kcal": 每100克热量(整数大卡),\n  "protein": 每100克蛋白质(整数克),\n  "fat": 每100克脂肪(整数克),\n  "carbs": 每100克碳水(整数克),\n  "note": "数据来源(如中国食物成分表/USDA/估算，10字以内)"\n}\n\n要求：\n- 返回纯JSON，不要有markdown代码块\n- 数据尽可能准确，基于公开营养数据库\n- 如果找不到精确数据，给出合理估算';
+
+  try {
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=' + apiKey,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 512 }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('API 错误 (' + response.status + ')');
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let jsonStr = text.trim();
+    jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const result = JSON.parse(jsonStr);
+
+    // Populate fields
+    const name = result.name || q;
+    $('foodSearch').value = name;
+    $('foodGrams').dataset.kcalPer100 = result.kcal || 0;
+    $('foodGrams').dataset.proteinPer100 = result.protein || 0;
+    $('foodGrams').dataset.fatPer100 = result.fat || 0;
+    $('foodGrams').dataset.carbsPer100 = result.carbs || 0;
+    const g = parseFloat($('foodGrams').value) || 100;
+    $('foodCalories').value = Math.round((result.kcal || 0) * g / 100);
+
+    dd.innerHTML = '<div class="food-dropdown-item food-search-result">' +
+      '✅ 「' + name + '」每100g: <strong>' + (result.kcal||0) + '</strong>大卡 ' +
+      '| 蛋白质<strong>' + (result.protein||0) + 'g</strong> ' +
+      '| 脂肪<strong>' + (result.fat||0) + 'g</strong> ' +
+      '| 碳水<strong>' + (result.carbs||0) + 'g</strong>' +
+      '<span style="font-size:0.62rem;color:var(--text-tertiary);display:block;">' + (result.note || 'AI估算') + '</span></div>' +
+      '<div class="food-dropdown-item" style="color:var(--text-tertiary);">确认数据后点击 ✓ 添加</div>';
+  } catch (error) {
+    dd.innerHTML = '<div class="food-dropdown-item" style="color:var(--red);">❌ 搜索失败: ' + error.message + '</div>' +
+      '<div class="food-dropdown-item" style="color:var(--text-tertiary);">请检查API Key或手动输入</div>';
+  }
+}
+
+function updateMacroPreview() {
+  // Updates the calorie field when grams change, using stored per-100g values
+  const g = parseFloat($('foodGrams').value) || 100;
+  const k100 = parseFloat($('foodGrams').dataset.kcalPer100) || 0;
+  if (k100 > 0) {
+    $('foodCalories').value = Math.round(k100 * g / 100);
+  }
 }
 
 function clearTodayFood() {
